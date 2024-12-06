@@ -93,6 +93,5 @@ if st.button("Genera risposta!"):
     st.write(response)
 
 st.markdown(
-    """**Note:**
-    - Assicurati che il server di Ollama sia attivo e accessibile su `http://localhost:11434`."""
+    """**Note:** Assicurati che il server di Ollama sia attivo e accessibile su `http://localhost:11434`."""
 )

@@ -5,6 +5,8 @@ import requests
 import streamlit as st  # type: ignore
 from openai import OpenAI  # type: ignore
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # Funzione per caricare i file caricati dall'utente
 def load_uploaded_files(uploaded_files):
     file_contents = []
@@ -37,6 +39,7 @@ def query_ollama(prompt):
     except requests.RequestException as e:
         return f"Errore durante la connessione a Ollama: {e}"
 
+# Funzione per avviare il server Ollama
 @st.cache_resource
 def start_ollama_server():
     try:
@@ -67,9 +70,7 @@ def save_to_file(content, file_path):
     with open(file_path, "w") as f:
         f.write(content)
 
-import os
-import subprocess
-
+# Funzione per unire i file Terraform
 def merge_terraform_files(original_file, new_components_file, output_file):
     if not os.path.exists(original_file):
         print(f"Errore: il file originale {original_file} non esiste.")
@@ -86,6 +87,15 @@ def merge_terraform_files(original_file, new_components_file, output_file):
     except Exception as e:
         print(f"Errore durante l'unione dei file: {e}")
 
+# Funzione per aggiornare il file configurazione Terraform
+def update_terraform_file(merged_file, original_file):
+    try:
+        os.replace(merged_file, original_file)
+        print(f"File Terraform aggiornato: {original_file}")
+    except Exception as e:
+        print(f"Errore durante l'aggiornamento del file Terraform: {e}")
+
+# Funzione per eseguire la pipeline Terraform
 def execute_terraform_pipeline(terraform_dir):
     if not os.path.exists(terraform_dir):
         print(f"Errore: la directory Terraform {terraform_dir} non esiste.")
@@ -156,18 +166,19 @@ if st.button("Genera risposta!"):
     st.write(response)
 
     # Salva i nuovi componenti in un file temporaneo
-    new_components_file = "new_components.tf"
+    new_components_file = os.path.join(BASE_DIR, "new_components.tf") # File temporaneo per i nuovi component
     save_to_file(response, new_components_file)
 
-    # Specifica i percorsi dei file Terraform
-    original_file = "./terraform_architecture/main.tf"  # Modifica con il percorso del file Terraform originale
-    merged_file = "merged_main.tf"  # Output del file unito
-
     # Unisce i file Terraform
+    original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf") # File Terraform originale
+    merged_file = os.path.join(BASE_DIR, "merged_main.tf") # Output del file unito
     merge_terraform_files(original_file, new_components_file, merged_file)
 
+    # Update Terraform Directory
+    update_terraform_file(merged_file, original_file)
+
     # Esegue la pipeline Terraform
-    terraform_directory = "./terraform_architecture"  # Directory contenente i file Terraform
+    terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
     execute_terraform_pipeline(terraform_directory)
 
     st.success("Pipeline completata con successo! Controlla la console per i dettagli.")
