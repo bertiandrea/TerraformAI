@@ -14,7 +14,7 @@ def load_uploaded_files(uploaded_files):
             content = uploaded_file.getvalue().decode("utf-8")
             file_contents.append(content)
             file_contents.append("---------------------------------------------------\n")
-        except (UnicodeDecodeError, Exception) as e:
+        except (Exception) as e:
             file_contents.append(f"Errore nella lettura del file {file_name}: {e}\n")
             file_contents.append("---------------------------------------------------\n")
     return "".join(file_contents)
@@ -39,7 +39,6 @@ def query_ollama(prompt):
 def start_ollama_server():
     try:
         subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) # Avvia il server Ollama in background
-        time.sleep(5) # Aspetta qualche secondo per dare il tempo al server di avviarsi
         print("Server Ollama avviato.")
     except Exception as e:
         print(f"Errore durante l'avvio del server Ollama: {e}")
@@ -50,7 +49,7 @@ start_ollama_server()
 st.title("Codellama")
 st.write(
     """
-    Benvenuto! Questo strumento ti permette di interagire con un Codellama in esecuzione locale.
+    Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale.
     Puoi caricare file di testo per fornire contesto aggiuntivo al modello.
     """
 )
@@ -60,7 +59,7 @@ prompt = st.text_area("Inserisci il tuo prompt:", placeholder="Prompt...", value
 
 uploaded_files = st.file_uploader("Carica files:", accept_multiple_files=True)
 
-if st.button("Invia al Chatbot"):
+if st.button("Genera"):
     with st.spinner("Elaborazione in corso..."):
         full_prompt = prompt
         if uploaded_files:
@@ -69,7 +68,7 @@ if st.button("Invia al Chatbot"):
 
         chatbot_response = query_ollama(full_prompt)
 
-    st.subheader("Risposta del Chatbot:")
+    st.subheader("Risposta:")
     st.write(chatbot_response)
 
 st.markdown(
