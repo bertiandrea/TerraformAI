@@ -82,7 +82,7 @@ if st.button("Genera risposta!"):
         full_prompt = prompt
         if uploaded_files:
             files_contents = load_uploaded_files(uploaded_files)
-            full_prompt += f"\n\nContenuto dei file caricati:\n{files_contents} \n\n"
+            full_prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
         if use_chatgpt and api_key:
             response = query_chatgpt(api_key, full_prompt, system_prompt)
         else:
