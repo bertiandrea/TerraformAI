@@ -35,6 +35,7 @@ def query_ollama(prompt):
     except requests.RequestException as e:
         return f"Errore durante la connessione a Ollama: {e}"
 
+@st.cache_resource
 def start_ollama_server():
     try:
         subprocess.Popen(["ollama", "serve"], stdout=subprocess.PIPE, stderr=subprocess.PIPE) # Avvia il server Ollama in background
