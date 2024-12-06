@@ -7,9 +7,7 @@ terraform {
   }
 }
 
-provider "docker" {
-  host    = "npipe:////.//pipe//docker_engine"
-}
+provider "docker" {}
 
 # Crea una rete Docker personalizzata
 resource "docker_network" "custom_network" {
@@ -37,8 +35,8 @@ resource "docker_container" "postgres" {
   ]
 
   ports {
-    internal = 80
-    external = 8000
+    internal = 5432
+    external = 5432
   }
 
   restart = "always"
