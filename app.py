@@ -60,10 +60,8 @@ def query_chatgpt(api_key, prompt, system_prompt, max_tokens=512):
 
 st.title("Codellama")
 st.write(
-    """
-    Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale o mediante query con ChatGPT.
-    Puoi caricare file di testo per fornire contesto aggiuntivo al modello.
-    """
+    """Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale o mediante query con ChatGPT.
+    Puoi caricare file di testo per fornire contesto aggiuntivo al modello."""
 )
 
 use_chatgpt = st.checkbox("Use ChatGPT instead of local model. **SECURITY AND DATA PRIVACY WARNING**", value=False)
@@ -72,12 +70,10 @@ if(use_chatgpt):
     value="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")
 
 system_prompt = "Sei un assistente virtuale, specializzata in Terraform. Puoi aiutare a scrivere codice Terraform per implementare componenti di deception."
-default_prompt = """
-Aggiungi alla configurazione di Terraform già esistente componenti di deception.
+default_prompt = """Aggiungi alla configurazione di Terraform già esistente componenti di deception.
 Non includere per intero il codice dei file, ma solo le nuove risorse da aggiungere per implementare questi componenti.
 Assicurati che il codice segua la struttura di Terraform e che i nuovi componenti siano configurati correttamente con la rete personalizzata esistente.
-Il codice deve essere scritto in modo completo, chiaro e ben strutturato.
-"""
+Il codice deve essere scritto in modo completo, chiaro e ben strutturato."""
 prompt = st.text_area("Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200)
 
 uploaded_files = st.file_uploader("Carica files:", accept_multiple_files=True)
@@ -97,8 +93,6 @@ if st.button("Genera risposta!"):
     st.write(response)
 
 st.markdown(
-    """
-    **Note:**
-    - Assicurati che il server di Ollama sia attivo e accessibile su `http://localhost:11434`.
-    """
+    """**Note:**
+    - Assicurati che il server di Ollama sia attivo e accessibile su `http://localhost:11434`."""
 )
