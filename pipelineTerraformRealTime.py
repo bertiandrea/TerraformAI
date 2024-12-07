@@ -143,6 +143,8 @@ async def periodic_deploy(prompt=default_prompt):
             # Esegue deploy Terraform
             execute_terraform_deploy(terraform_directory)
 
+        st.success("Pipeline completata con successo!")
+                   
         interval = random.randint(300, 900)  # Range casuale tra 5 e 15 minuti
         print(f"Deploy completato. Attendo {interval} secondi prima del prossimo aggiornamento.")
         await asyncio.sleep(interval)  # Pausa asincrona
