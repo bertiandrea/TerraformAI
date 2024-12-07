@@ -25,9 +25,18 @@ def read_files_from_directory(directory_path):
                 except Exception as e:
                     file_contents.append(f"Errore nella lettura del file {file_name}: {e}\n")
                     file_contents.append("---------------------------------------------------\n")
+        return "".join(file_contents)
     except Exception as e:
-        return f"Errore durante l'accesso alla directory: {e}"
-    return "".join(file_contents)
+        print(f"Errore durante l'accesso alla directory: {e}")
+        raise e
+
+def read_file(file_path):
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+    except Exception as e:
+        print(f"Errore nella lettura del file {file_path}: {e}")
+        raise e
 
 # Funzione per inviare un prompt al modello Codellama
 def query_ollama(prompt):
@@ -43,8 +52,10 @@ def query_ollama(prompt):
         )
         return response.json()["response"]
     except requests.RequestException as e:
-        return f"Errore durante la connessione a Ollama: {e}"
+        print(f"Errore durante la connessione a Ollama: {e}")
+        raise e
 
+    
 # Funzione per avviare il server Ollama
 @st.cache_resource
 def start_ollama_server():
@@ -76,6 +87,7 @@ def update_terraform_file(source_file, destination_file):
         print(f"File Terraform aggiornato: {destination_file}")
     except Exception as e:
         print(f"Errore durante l'aggiornamento del file Terraform: {e}")
+        raise e
 
 # Funzione per eseguire la pipeline Terraform
 def execute_terraform_deploy(terraform_dir):
@@ -98,6 +110,7 @@ def execute_terraform_deploy(terraform_dir):
         print("Deploy completato con successo!")
     except Exception as e:
         print(f"Errore: {e}")
+        raise e
 
 
 # Interfaccia utente Streamlit
@@ -106,10 +119,7 @@ st.write(
     """Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale."""
 )
 
-default_prompt = """Aggiungi alla configurazione di Terraform già esistente componenti di deception.
-Includi per intero il codice del file main.tf con le nuove aggiunte.
-Assicurati che il codice segua la struttura di Terraform e che i nuovi componenti siano configurati correttamente con la rete personalizzata esistente.
-Il codice deve essere scritto in modo completo, chiaro e ben strutturato."""
+default_prompt = """Rispondi SOLO con il codice del file main.tf, aggiungendo in fondo il commento #Codellama has been here."""
 user_prompt = st.text_area(
     "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
 )
@@ -120,30 +130,33 @@ if st.button("Update prompt"):
 
 async def periodic_deploy(prompt=default_prompt):
     while True:
-        with st.spinner("Generazione del codice Terraform in corso..."):
-            terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
-            
-            files_contents = read_files_from_directory(terraform_directory)
-            prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
-            print("Prompt: ", prompt)
+        try:
+            with st.spinner("Generazione del codice Terraform in corso..."):
+                terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
+                
+                files_contents = read_files_from_directory(terraform_directory)
+                prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
+                print("Prompt: ", prompt)
 
-            # Invia il prompt al modello Codellama
-            response = query_ollama(prompt)
-            print("Response: ", response)
+                # Invia il prompt al modello Codellama
+                response = query_ollama(prompt)
+                print("Response: ", response)
 
-        # Salva nuovo file Terraform generato
-        new_main_file = os.path.join(BASE_DIR, "new_main.tf")  # File terraform generato
-        save_to_file(response, new_main_file)
+            # Salva nuovo file Terraform generato
+            new_main_file = os.path.join(BASE_DIR, "new_main.tf")  # File terraform generato
+            save_to_file(response, new_main_file)
 
-        # Update file Terraform
-        original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf")  # File Terraform originale
-        update_terraform_file(new_main_file, original_file)
+            # Update file Terraform
+            original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf")  # File Terraform originale
+            update_terraform_file(new_main_file, original_file)
 
-        with st.spinner("Deploy in corso..."):
-            # Esegue deploy Terraform
-            execute_terraform_deploy(terraform_directory)
+            with st.spinner("Deploy in corso..."):
+                # Esegue deploy Terraform
+                execute_terraform_deploy(terraform_directory)
 
-        st.success("Pipeline completata con successo!")
+            st.success("Pipeline completata con successo!")
+        except Exception as e:
+            st.error(f"Errore durante l'esecuzione della pipeline: {e}")
                    
         interval = random.randint(300, 900)  # Range casuale tra 5 e 15 minuti
         print(f"Deploy completato. Attendo {interval} secondi prima del prossimo aggiornamento.")
