@@ -2,7 +2,10 @@ import os
 import subprocess
 import time
 import requests
+import streamlit as st  # type: ignore
 from openai import OpenAI  # type: ignore
+import random
+import asyncio
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -43,6 +46,7 @@ def query_ollama(prompt):
         return f"Errore durante la connessione a Ollama: {e}"
 
 # Funzione per avviare il server Ollama
+@st.cache_resource
 def start_ollama_server():
     try:
         subprocess.Popen(
@@ -65,7 +69,7 @@ def update_terraform_file(source_file, destination_file):
         print(f"Errore: il file sorgente {source_file} non esiste.")
         return
     if not os.path.exists(destination_file):
-        print(f"Errore: il file di destinazione {destination_file} non esiste.")
+        print(f"Errore: il file destinazione {destination_file} non esiste.")
         return
     try:
         os.replace(source_file, destination_file)
@@ -95,30 +99,54 @@ def execute_terraform_deploy(terraform_dir):
     except Exception as e:
         print(f"Errore: {e}")
 
-prompt = """Aggiungi alla configurazione di Terraform già esistente componenti di deception.
+
+# Interfaccia utente Streamlit
+st.title("Codellama")
+st.write(
+    """Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale."""
+)
+
+default_prompt = """Aggiungi alla configurazione di Terraform già esistente componenti di deception.
 Includi per intero il codice del file main.tf con le nuove aggiunte.
 Assicurati che il codice segua la struttura di Terraform e che i nuovi componenti siano configurati correttamente con la rete personalizzata esistente.
 Il codice deve essere scritto in modo completo, chiaro e ben strutturato."""
+user_prompt = st.text_area(
+    "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
+)
 
-terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
+if st.button("Update prompt"):
+    prompt = user_prompt
+    st.success("Prompt aggiornato con successo!")
 
-files_contents = read_files_from_directory(terraform_directory)
-prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
+async def periodic_deploy(prompt=default_prompt):
+    while True:
+        with st.spinner("Generazione del codice Terraform in corso..."):
+            terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
+            
+            files_contents = read_files_from_directory(terraform_directory)
+            prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
+            print("Prompt: ", prompt)
 
-print ("Prompt: ", prompt)
+            # Invia il prompt al modello Codellama
+            response = query_ollama(prompt)
+            print("Response: ", response)
 
-# Invia il prompt al modello Codellama
-response = query_ollama(prompt)
+        # Salva nuovo file Terraform generato
+        new_main_file = os.path.join(BASE_DIR, "new_main.tf")  # File terraform generato
+        save_to_file(response, new_main_file)
 
-print ("Response: ", response)
+        # Update file Terraform
+        original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf")  # File Terraform originale
+        update_terraform_file(new_main_file, original_file)
 
-# Salva nuovo file Terraform generato
-new_main_file = os.path.join(BASE_DIR, "new_main.tf") # File terraform generato
-save_to_file(response, new_main_file)
+        with st.spinner("Deploy in corso..."):
+            # Esegue deploy Terraform
+            execute_terraform_deploy(terraform_directory)
 
-# Update file Terraform
-original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf") # File Terraform originale
-update_terraform_file(new_main_file, original_file)
+        interval = random.randint(300, 900)  # Range casuale tra 5 e 15 minuti
+        print(f"Deploy completato. Attendo {interval} secondi prima del prossimo aggiornamento.")
+        await asyncio.sleep(interval)  # Pausa asincrona
 
-# Esegue deploy Terraform
-execute_terraform_deploy(terraform_directory)
+# Esegui la funzione asincrona
+if __name__ == "__main__":
+    asyncio.run(periodic_deploy())
