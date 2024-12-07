@@ -45,7 +45,7 @@ def query_ollama(prompt):
         response = requests.post(
             url,
             json={
-                "model": "codellama",
+                "model": "llama3.2",
                 "prompt": prompt,
                 "stream": False,
             },
@@ -96,30 +96,29 @@ def execute_terraform_deploy(terraform_dir):
         return
     try:
         print("Inizializzazione di Terraform...")
-        subprocess.run(["terraform", "init"], cwd=terraform_dir, check=True)
+        subprocess.run([os.path.join(terraform_dir, "terraform"), "init"], cwd=terraform_dir, check=True)
 
         print("Validazione della configurazione...")
-        subprocess.run(["terraform", "validate"], cwd=terraform_dir, check=True)
+        subprocess.run([os.path.join(terraform_dir, "terraform"), "validate"], cwd=terraform_dir, check=True)
 
         print("Pianificazione delle modifiche...")
-        subprocess.run(["terraform", "plan"], cwd=terraform_dir, check=True)
+        subprocess.run([os.path.join(terraform_dir, "terraform"), "plan"], cwd=terraform_dir, check=True)
 
         print("Approvazione delle modifiche...")
-        subprocess.run(["terraform", "apply", "-auto-approve"], cwd=terraform_dir, check=True)
-
+        subprocess.run([os.path.join(terraform_dir, "terraform"), "apply", "-auto-approve"], cwd=terraform_dir, check=True)
+        
         print("Deploy completato con successo!")
     except Exception as e:
         print(f"Errore: {e}")
         raise e
 
-
 # Interfaccia utente Streamlit
-st.title("Codellama")
+st.title("TerraformLLaMa - Pipeline Terraform")
 st.write(
-    """Benvenuto! Questo strumento ti permette di interagire con Codellama in esecuzione locale."""
+    """Benvenuto! Questo strumento ti permette di interagire con llama in esecuzione locale."""
 )
 
-default_prompt = """Rispondi SOLO con il codice del file main.tf, aggiungendo in fondo il commento #Codellama has been here."""
+default_prompt = """Rispondi con il codice del file main.tf, aggiungendo in fondo il commento #llama has been here."""
 user_prompt = st.text_area(
     "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
 )
@@ -154,7 +153,7 @@ async def periodic_deploy(prompt=default_prompt):
                 # Esegue deploy Terraform
                 execute_terraform_deploy(terraform_directory)
 
-            st.success("Pipeline completata con successo!")
+            st.success("Deploy completato con successo! Timestamp: " + str(time.time()))
         except Exception as e:
             st.error(f"Errore durante l'esecuzione della pipeline: {e}")
                    
