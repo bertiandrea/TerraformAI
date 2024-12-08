@@ -2,7 +2,7 @@
 # Terraform deception elements with LLM
 
 ## Descrizione Generale
-Questo progetto ha come obiettivo l'implementazione una pipeline automatizzata per la gestione e il deployment di configurazioni Terraform, integrando la generazione di elementi di deception tramite il modello Codellama.
+Questo progetto ha come obiettivo l'implementazione di una pipeline automatizzata per la gestione e il deployment di configurazioni Terraform, integrando la generazione di elementi di deception tramite il modello Codellama.
 
 ## Struttura Principale
 ### Funzionalità
@@ -48,5 +48,5 @@ Assicurati di avere:
 - La directory contenente i file Terraform esistente.
 
 ## Conclusione
-Questa soluzione proposta offre una soluzione automatizzata per la gestione delle infrastrutture Terraform, combinando generazione automatica di configurazioni e un'interfaccia utente intuitiva.
+Questa soluzione proposta offre una modalità di gestione automatizzata delle infrastrutture Terraform, combinando generazione automatica di configurazioni e un'interfaccia utente intuitiva.
 
