@@ -3,9 +3,9 @@ import subprocess
 import time
 import requests
 import streamlit as st  # type: ignore
-from openai import OpenAI  # type: ignore
 import random
 import asyncio
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -16,15 +16,16 @@ def read_files_from_directory(directory_path):
         for file_name in os.listdir(directory_path):
             file_path = os.path.join(directory_path, file_name)
             if os.path.isfile(file_path):
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as file:
-                        file_contents.append(f"FILE: {file_name}\n")
+                if not use_only_tf_file or file_path.endswith(".tf"):
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as file:
+                            file_contents.append(f"FILE: {file_name}\n")
+                            file_contents.append("---------------------------------------------------\n")
+                            file_contents.append(file.read())
+                            file_contents.append("\n---------------------------------------------------\n")
+                    except Exception as e:
+                        file_contents.append(f"Errore nella lettura del file {file_name}: {e}\n")
                         file_contents.append("---------------------------------------------------\n")
-                        file_contents.append(file.read())
-                        file_contents.append("\n---------------------------------------------------\n")
-                except Exception as e:
-                    file_contents.append(f"Errore nella lettura del file {file_name}: {e}\n")
-                    file_contents.append("---------------------------------------------------\n")
         return "".join(file_contents)
     except Exception as e:
         print(f"Errore durante l'accesso alla directory: {e}")
@@ -39,13 +40,13 @@ def read_file(file_path):
         raise e
 
 # Funzione per inviare un prompt al modello Codellama
-def query_ollama(prompt):
+def query_ollama(model, prompt):
     try:
         url = "http://localhost:11434/api/generate"
         response = requests.post(
             url,
             json={
-                "model": "llama3.2",
+                "model": model,
                 "prompt": prompt,
                 "stream": False,
             },
@@ -112,16 +113,23 @@ def execute_terraform_deploy(terraform_dir):
         print(f"Errore: {e}")
         raise e
 
+def parse_string(string):
+    string = re.search('```(.*?)```', string, re.DOTALL).group(1).strip()
+    return string
+
 # Interfaccia utente Streamlit
 st.title("TerraformLLaMa - Pipeline Terraform")
 st.write(
     """Benvenuto! Questo strumento ti permette di interagire con llama in esecuzione locale."""
 )
 
-default_prompt = """Rispondi con il codice del file main.tf, aggiungendo in fondo il commento #llama has been here."""
+default_prompt = """Modifica il file 'main.tf' aggiungendo nuovi honeypot o modificando quelli esistenti. La risposta deve contenere esclusivamente il nuovo codice modificato del file 'main.tf'."""
 user_prompt = st.text_area(
     "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
 )
+
+use_only_tf_file = st.checkbox("Analyze only .tf file (Speeds up computation).", value=True)
+model_choice = st.selectbox("Modello LLaMa:", ["llama3.2", "codellama"])
 
 if st.button("Update prompt"):
     prompt = user_prompt
@@ -133,17 +141,23 @@ async def periodic_deploy(prompt=default_prompt):
             with st.spinner("Generazione del codice Terraform in corso..."):
                 terraform_directory = os.path.join(BASE_DIR, "terraform_architecture")  # Directory contenente i file Terraform
                 
+                # Costruisci prompt completo
                 files_contents = read_files_from_directory(terraform_directory)
-                prompt += f"\n\nContenuto dei file caricati:\n{files_contents}\n\n"
-                print("Prompt: ", prompt)
+                full_prompt = f"{files_contents}\n\n"
+                full_prompt += prompt
+                print("\nPROMPT:\n", full_prompt)
 
                 # Invia il prompt al modello Codellama
-                response = query_ollama(prompt)
-                print("Response: ", response)
+                response = query_ollama(model_choice, full_prompt)
+                print("\nRESPONSE:\n", response)
+
+                # Parsing della risposta
+                response_parsed = parse_string(response)
+                print("\nRESPONSE PARSED:\n", response_parsed)
 
             # Salva nuovo file Terraform generato
             new_main_file = os.path.join(BASE_DIR, "new_main.tf")  # File terraform generato
-            save_to_file(response, new_main_file)
+            save_to_file(response_parsed, new_main_file)
 
             # Update file Terraform
             original_file = os.path.join(BASE_DIR, "terraform_architecture/main.tf")  # File Terraform originale
