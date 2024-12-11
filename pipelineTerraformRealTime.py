@@ -35,6 +35,7 @@ def read_files_from_directory(directory_path):
         print(f"Errore durante l'accesso alla directory: {e}")
         raise e
 
+# Funzione per leggere un file
 def read_file(file_path):
     if not os.path.exists(file_path):
         print(f"Errore: il file {file_path} non esiste.")
@@ -101,6 +102,7 @@ def update_terraform_file(source_file, destination_file):
         print(f"Errore durante l'aggiornamento del file Terraform: {e}")
         raise e
 
+# Funzione per creare un backup del file Terraform
 def backup_terraform_file(source_file, destination_file):
     if not os.path.exists(source_file):
         print(f"Errore: il file sorgente {source_file} non esiste.")
@@ -135,6 +137,7 @@ def execute_terraform_deploy(terraform_dir):
         print(f"Errore durante il deploy della configurazione Terraform: {e}")
         raise e
 
+# Parsing della stringa di risposta
 def parse_string(string):
     try:
         string = re.search('```(.*?)```', string, re.DOTALL).group(1).strip()
@@ -152,7 +155,7 @@ user_prompt = st.text_area(
     "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
 )
 
-use_only_tf_file = st.checkbox("Analyze only .tf file (Speeds up computation).", value=True)
+use_only_tf_file = st.checkbox("Analizza solo il file .tf dalla directory dell'architettura Terraform (Miglioramento della velocità di inferenza).", value=True)
 model_choice = st.selectbox("Modello LLaMa:", ["codellama", "llama3.2"])
 
 if st.button("Update prompt"):
@@ -196,11 +199,13 @@ async def periodic_deploy(prompt=default_prompt):
 
         try:
             with st.spinner("Deploy in corso..."):
+                # Esegui la pipeline Terraform
                 execute_terraform_deploy(terraform_directory)
             st.success("Deploy completato con successo! Tempo impiegato: {:.2f} secondi.".format(time.time() - init))
         except Exception as e:
             update_terraform_file(old_main_file, os.path.join(terraform_directory, "main.tf"))
             st.error("Errore durante il deploy. Ripristino della configurazione originale.")
+            continue
             
         interval = random.randint(300, 900)  # Range casuale tra 5 e 15 minuti
         print(f"Attendo {interval} secondi prima del prossimo aggiornamento.")
