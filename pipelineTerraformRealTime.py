@@ -150,13 +150,13 @@ def parse_string(string):
 st.title("TerraformLLaMa - Pipeline Terraform")
 st.write("""Benvenuto! Questo strumento ti permette di interagire con llama in esecuzione locale.""")
 
-default_prompt = """Il codice del file 'main.tf' deve essere riportato in modo completo e preciso, aggiungendo nuovi honeypot o modificando quelli esistenti in modo coerente con l'infrastruttura Terraform. La risposta deve contenere solo il nuovo codice modificato del file 'main.tf'."""
+default_prompt = """Il codice del file 'main.tf' deve essere riportato in modo completo e preciso, aggiungendo nuovi dispositivi di deception o modificando quelli esistenti in modo coerente con l'infrastruttura Terraform. La risposta deve contenere solo il nuovo codice modificato del file 'main.tf'."""
 user_prompt = st.text_area(
     "Inserisci il tuo prompt:", placeholder="Prompt...", value=default_prompt, height=200
 )
 
 use_only_tf_file = st.checkbox("Analizza solo il file .tf dalla directory dell'architettura Terraform (Miglioramento della velocità di inferenza).", value=True)
-model_choice = st.selectbox("Modello LLaMa:", ["codellama", "llama3.2"])
+model_choice = st.selectbox("Modello LLaMa:", ["codegemma", "codellama:13b-code", "codellama:code", "llama3.2:3b", "llama3.2:0.5b"])
 
 if st.button("Update prompt"):
     prompt = user_prompt
